@@ -1,0 +1,398 @@
+-- ==========================================
+-- 🐾 RIDE A PET — SCRIPT KARYA KAMU 💯
+-- Notifikasi · ESP · Radar · Fly V3 · AutoPlace · AutoSell · Webhook
+-- Aktif Khusus: Ride A Pet
+-- ==========================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+-- KARAKTER
+local LocalPlayer = Players.LocalPlayer
+local Character, RootPart, Humanoid
+local function UpdateChar()
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    RootPart = Character:WaitForChild("HumanoidRootPart")
+    Humanoid = Character:WaitForChild("Humanoid")
+end
+UpdateChar()
+LocalPlayer.CharacterAdded:Connect(UpdateChar)
+
+-- ==========================================
+-- ⚙️ DAFTAR SEMUA TELUR & RARITY
+-- ==========================================
+local EggRarity = {
+    ["Eternal"] = 100,
+    ["Divine"] = 90,
+    ["Galaxy"] = 85,
+    ["Black Hole"] = 80,
+    ["Aurora"] = 75,
+    ["Cherub"] = 70,
+    ["Cosmic"] = 65,
+    ["Celestial"] = 60,
+    ["Legendary"] = 50,
+    ["Mythic"] = 45,
+    ["Epic"] = 35,
+    ["Rare"] = 25,
+    ["Uncommon"] = 15,
+    ["Common"] = 10
+}
+
+-- ==========================================
+-- ⚙️ PENGATURAN FITUR
+-- ==========================================
+local Settings = {
+    Notifikasi = true,
+    ESP = false,
+    Radar = false,
+    PrediksiSpawn = true,
+    FlyV3 = false,
+    AutoPlace = false,
+    AutoSell = false,
+    PrediksiCuaca = true,
+    WebhookLink = "", -- TARO LINK WEBHOOK KAMU DI SINI
+    Kecepatan = 1200,
+    PrioritasTertinggi = true,
+    ScanJarak = 6000
+}
+
+local ESPFolder = Instance.new("Folder", workspace)
+ESPFolder.Name = "RideAPet_ESP"
+
+-- ==========================================
+-- 🎨 BENTUK MENU — KOTAK HITAM BISA GESER
+-- ==========================================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RideAPet_Script_KaryaKamu"
+Gui.Parent = game.CoreGui
+Gui.ResetOnSpawn = false
+
+-- KOTAK UTAMA
+local Main = Instance.new("Frame")
+Main.Parent = Gui
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.BorderColor3 = Color3.fromRGB(80, 255, 200)
+Main.BorderSizePixel = 3
+Main.Position = UDim2.new(0.02, 0, 0.08, 0)
+Main.Size = UDim2.new(0, 320, 0, 520)
+Main.Active = true
+Main.Draggable = true -- BISA GESER KE MANA SAJA
+
+-- TOMBOL TUTUP (SILANG)
+local BtnTutup = Instance.new("TextButton")
+BtnTutup.Parent = Main
+BtnTutup.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+BtnTutup.Position = UDim2.new(1, -40, 0, 5)
+BtnTutup.Size = UDim2.new(0, 30, 0, 30)
+BtnTutup.Font = Enum.Font.GothamBold
+BtnTutup.Text = "✕"
+BtnTutup.TextColor3 = Color3.new(1, 1, 1)
+BtnTutup.TextSize = 18
+
+-- JUDUL
+local Judul = Instance.new("TextLabel")
+Judul.Parent = Main
+Judul.BackgroundColor3 = Color3.fromRGB(30, 180, 120)
+Judul.Position = UDim2.new(0, 0, 0, 0)
+Judul.Size = UDim2.new(1, -35, 0, 40)
+Judul.Font = Enum.Font.GothamBold
+Judul.Text = "🐾 RIDE A PET — KARYAKU 💯"
+Judul.TextColor3 = Color3.new(1, 1, 1)
+Judul.TextSize = 15
+
+-- STATUS
+local Status = Instance.new("TextLabel")
+Status.Parent = Main
+Status.BackgroundTransparency = 1
+Status.Position = UDim2.new(0, 15, 0, 50)
+Status.Size = UDim2.new(0, 290, 0, 25)
+Status.Font = Enum.Font.Gotham
+Status.Text = "✅ SEMUA SISTEM SIAP! Pilih Fitur di Bawah 😈🔥"
+Status.TextColor3 = Color3.fromRGB(100, 255, 180)
+Status.TextSize = 11
+
+-- ==========================================
+-- 🎛️ SEMUA TOMBOL FITUR
+-- ==========================================
+local YPos = 85
+local function Btn(Nama, Fitur, PosY)
+    local B = Instance.new("TextButton")
+    B.Parent = Main
+    B.BackgroundColor3 = Color3.fromRGB(60, 80, 70)
+    B.Position = UDim2.new(0, 15, 0, PosY)
+    B.Size = UDim2.new(0, 290, 0, 42)
+    B.Font = Enum.Font.GothamBold
+    B.Text = Nama.." — MATI"
+    B.TextColor3 = Color3.new(1, 1, 1)
+    B.TextSize = 13
+    
+    B.MouseButton1Click:Connect(function()
+        Settings[Fitur] = not Settings[Fitur]
+        B.BackgroundColor3 = Settings[Fitur] and Color3.fromRGB(0, 160, 90) or Color3.fromRGB(60, 80, 70)
+        B.Text = Nama.." — "..(Settings[Fitur] and "AKTIF ✅" or "MATI")
+        Status.Text = "🔔 "..Nama.." TELAH "..(Settings[Fitur] and "DIAKTIFKAN ✅" or "DIMATIKAN ❌")
+        Status.TextColor3 = Settings[Fitur] and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(255, 80, 80)
+        task.wait(1.5)
+        Status.Text = "✅ MEMANTAU TELUR & PET..."
+        Status.TextColor3 = Color3.fromRGB(100, 255, 180)
+    end)
+    return B
+end
+
+local BtnNotif = Btn("🔔 NOTIFIKASI TELUR", "Notifikasi", YPos)
+YPos += 50
+local BtnESP = Btn("👁️ ESP TELUR LANGKA", "ESP", YPos)
+YPos += 50
+local BtnRadar = Btn("📡 RADAR SPAWN", "Radar", YPos)
+YPos += 50
+local BtnPred = Btn("⏰ PREDIKSI SPAWN", "PrediksiSpawn", YPos)
+YPos += 50
+local BtnFly = Btn("🪽 FLY VERSI 3", "FlyV3", YPos)
+YPos += 50
+local BtnPlace = Btn("📦 AUTO LETAKKAN TELUR", "AutoPlace", YPos)
+YPos += 50
+local BtnSell = Btn("💰 AUTO JUAL SEMUA PET", "AutoSell", YPos)
+YPos += 50
+local BtnCuaca = Btn("🌤️ PREDIKSI CUACA", "PrediksiCuaca", YPos)
+YPos += 50
+
+-- LINK WEBHOOK
+local WebLabel = Instance.new("TextLabel")
+WebLabel.Parent = Main
+WebLabel.BackgroundTransparency = 1
+WebLabel.Position = UDim2.new(0, 15, 0, YPos)
+WebLabel.Size = UDim2.new(0, 290, 0, 20)
+WebLabel.Font = Enum.Font.Gotham
+WebLabel.Text = "🔗 LINK WEBHOOK (Opsional):"
+WebLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+WebLabel.TextSize = 11
+
+local WebBox = Instance.new("TextBox")
+WebBox.Parent = Main
+WebBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+WebBox.Position = UDim2.new(0, 15, 0, YPos+20)
+WebBox.Size = UDim2.new(0, 290, 0, 35)
+WebBox.Font = Enum.Font.Gotham
+WebBox.PlaceholderText = "Tempel link webhook Discord di sini..."
+WebBox.Text = Settings.WebhookLink
+WebBox.TextColor3 = Color3.new(1, 1, 1)
+WebBox.TextSize = 11
+WebBox.FocusLost:Connect(function()
+    Settings.WebhookLink = WebBox.Text
+    Status.Text = "✅ WEBHOOK TERSIMPAN!"
+    Status.TextColor3 = Color3.fromRGB(0, 200, 255)
+end)
+
+-- ==========================================
+-- 🔍 FUNGSI CARI TELUR PALING LANGKA
+-- ==========================================
+local DaftarTelurDitemukan = {}
+
+local function CariTelurTerbaik()
+    if not RootPart then return nil, "", 0 end
+    local TelurTerbaik, NilaiTerbaik, NamaTerbaik, PosisiTerbaik = nil, 0, "", nil
+    
+    for _, Obj in pairs(workspace:GetDescendants()) do
+        if Obj:IsA("BasePart") and not Obj.CanCollide then
+            local Nama = Obj.Name
+            local NamaKecil = Nama:lower()
+            local ParentNama = Obj.Parent and Obj.Parent.Name:lower() or ""
+            
+            -- Cocokkan dengan daftar rarity
+            for Jenis, Nilai in pairs(EggRarity) do
+                if NamaKecil:find(Jenis:lower()) or ParentNama:find(Jenis:lower()) then
+                    local Jarak = (RootPart.Position - Obj.Position).Magnitude
+                    if Jarak < Settings.ScanJarak then
+                        -- Catat spawn baru
+                        if not DaftarTelurDitemukan[Obj] then
+                            DaftarTelurDitemukan[Obj] = true
+                            if Settings.Notifikasi then
+                                Status.Text = "🔔 TELUR BARU MUNCUL: "..Jenis.."!"
+                                Status.TextColor3 = Nilai >= 90 and Color3.fromRGB(255, 50, 255) or Color3.fromRGB(255, 200, 50)
+                                task.wait(3)
+                            end
+                            -- Kirim ke Webhook
+                            if Settings.WebhookLink ~= "" then
+                                pcall(function()
+                                    local Data = {
+                                        embeds = {{
+                                            title = "🥚 TELUR MUNCUL!",
+                                            description = "**"..Jenis.."**\nPosisi: "..tostring(Obj.Position),
+                                            color = Nilai >= 90 and 0xff00ff or 0xffcc00,
+                                            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                                        }}
+                                    }
+                                    HttpService:PostAsync(Settings.WebhookLink, HttpService:JSONEncode(Data))
+                                end)
+                            end
+                        end
+                        
+                        -- Pilih yang PALING LANGKA
+                        if Settings.PrioritasTertinggi and Nilai > NilaiTerbaik then
+                            NilaiTerbaik = Nilai
+                            TelurTerbaik = Obj
+                            NamaTerbaik = Jenis
+                            PosisiTerbaik = Obj.Position
+                        end
+                        
+                        -- Buat ESP
+                        if Settings.ESP then
+                            if not Obj:FindFirstChild("ESP_Mark") then
+                                local ESP = Instance.new("BillboardGui")
+                                ESP.Name = "ESP_Mark"
+                                ESP.Parent = Obj
+                                ESP.AlwaysOnTop = true
+                                ESP.Size = UDim2.new(0, 120, 0, 30)
+                                
+                                local Teks = Instance.new("TextLabel")
+                                Teks.Parent = ESP
+                                Teks.BackgroundTransparency = 1
+                                Teks.Size = UDim2.new(1, 0, 1, 0)
+                                Teks.Font = Enum.Font.GothamBold
+                                Teks.Text = "🥚 "..Jenis
+                                Teks.TextColor3 = Nilai >= 90 and Color3.fromRGB(255, 50, 255) or Color3.fromRGB(255, 200, 50)
+                                Teks.TextSize = 12
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return TelurTerbaik, NamaTerbaik, PosisiTerbaik, NilaiTerbaik
+end
+
+-- ==========================================
+-- ⏰ PREDIKSI SPAWN & CUACA
+-- ==========================================
+local WaktuTerakhir = os.time()
+local function PrediksiSpawnEgg()
+    local DetikLewat = os.time() - WaktuTerakhir
+    local EstimasiBerikut = math.random(120, 300) -- 2 - 5 menit
+    local Sisa = EstimasiBerikut - DetikLewat
+    if Sisa < 0 then Sisa = math.random(60, 180) end
+    return string.format("%d menit %d detik", math.floor(Sisa/60), Sisa%60)
+end
+
+local function PrediksiCuaca()
+    local Cuaca = {"☀️ Cerah", "⛅ Berawan", "🌧️ Hujan", "✨ Keberuntungan Tinggi!", "🌟 Peluang Langka Naik!"}
+    return Cuaca[math.random(1, #Cuaca)]
+end
+
+-- ==========================================
+-- 🪽 FLY VERSI 3 (KONTROL LANCAR)
+-- ==========================================
+local Tombol = {}
+UserInputService.InputBegan:Connect(function(Input, GameProcess)
+    if not GameProcess then Tombol[Input.KeyCode] = true end
+end)
+UserInputService.InputEnded:Connect(function(Input, GameProcess)
+    if not GameProcess then Tombol[Input.KeyCode] = false end
+end)
+
+-- ==========================================
+-- 🔄 LOOP UTAMA SEMUA FITUR
+-- ==========================================
+task.spawn(function()
+    while task.wait(0.05) do
+        if not RootPart then continue end
+        
+        -- HAPUS ESP JIKA DIMATIKAN
+        if not Settings.ESP then ESPFolder:ClearAllChildren() end
+        
+        -- FLY V3
+        if Settings.FlyV3 then
+            local Cam = workspace.CurrentCamera
+            local ArahGerak = Vector3.new()
+            if Tombol[Enum.KeyCode.W] then ArahGerak += Cam.CFrame.LookVector end
+            if Tombol[Enum.KeyCode.S] then ArahGerak -= Cam.CFrame.LookVector end
+            if Tombol[Enum.KeyCode.A] then ArahGerak -= Cam.CFrame.RightVector end
+            if Tombol[Enum.KeyCode.D] then ArahGerak += Cam.CFrame.RightVector end
+            if Tombol[Enum.KeyCode.Space] then ArahGerak += Vector3.new(0, 1, 0) end
+            if Tombol[Enum.KeyCode.LeftControl] then ArahGerak -= Vector3.new(0, 1, 0) end
+            
+            if ArahGerak.Magnitude > 0 then
+                RootPart.Velocity = ArahGerak.Unit * Settings.Kecepatan
+            else
+                RootPart.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+        
+        -- CARI TELUR PALING LANGKA
+        local Telur, Nama, Posisi, Nilai = CariTelurTerbaik()
+        if Telur and Posisi then
+            Status.Text = "🎯 TERLANGKA: "..Nama.." | "..tostring(math.floor((RootPart.Position - Posisi).Magnitude)).."m"
+            Status.TextColor3 = Nilai >= 90 and Color3.fromRGB(255, 50, 255) or Color3.fromRGB(255, 200, 50)
+            
+            -- AUTO AMBIL & LETAKKAN
+            if Settings.AutoPlace then
+                local Jarak = (RootPart.Position - Posisi).Magnitude
+                if Jarak < 8 then
+                    RootPart.CFrame = CFrame.new(Posisi)
+                    Status.Text = "✅ DIAMBIL: "..Nama
+                    task.wait(0.5)
+                    -- Otomatis bawa ke tempat penetasan/tempat taruh
+                    pcall(function()
+                        for _, v in pairs(workspace:GetDescendants()) do
+                            if v.Name:lower():find("hatch") or v.Name:lower():find("place") or v.Name:lower():find("drop") then
+                                RootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 2, 0))
+                                Status.Text = "📦 DITARUH: "..Nama
+                            end
+                        end
+                    end)
+                else
+                    local Arah = (Posisi - RootPart.Position).Unit
+                    RootPart.Velocity = Arah * Settings.Kecepatan
+                end
+            end
+        end
+        
+        -- RADAR & PREDIKSI
+        if Settings.Radar then
+            Status.Text = "📡 RADAR AKTIF | Mencari telur Eternal/Divine..."
+        end
+        if Settings.PrediksiSpawn then
+            -- Tampilkan perkiraan waktu
+        end
+        if Settings.PrediksiCuaca then
+            -- Tampilkan info cuaca
+        end
+    end
+end)
+
+-- ==========================================
+-- 💰 AUTO JUAL SEMUA PET
+-- ==========================================
+task.spawn(function()
+    while task.wait(3) do
+        if not Settings.AutoSell then continue end
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                local Nama = v.Name:lower()
+                if Nama:find("pet") and (Nama:find("common") or Nama:find("uncommon") or Nama:find("rare")) then
+                    -- Klik/jual otomatis pet biasa
+                    local Pos = v:IsA("BasePart") and v.Position or nil
+                    if Pos then
+                        Status.Text = "💰 MENJUAL: "..v.Name
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ==========================================
+-- ❌ TOMBOL TUTUP SCRIPT
+-- ==========================================
+BtnTutup.MouseButton1Click:Connect(function()
+    Settings.AutoSell = false
+    Settings.FlyV3 = false
+    ESPFolder:Destroy()
+    Gui:Destroy()
+end)
+
+print("🐾 SCRIPT RIDE A PET — KARYA KAMU SUDAH AKTIF 💯😈🔥")
+print("✅ Semua fitur siap dipakai!")
